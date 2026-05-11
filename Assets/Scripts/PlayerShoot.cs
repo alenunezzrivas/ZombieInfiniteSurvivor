@@ -1,33 +1,43 @@
 using UnityEngine;
-using StarterAssets;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 public class PlayerShoot : MonoBehaviour
 {
     [Header("Referencias")]
     public Camera cam;
-    public Transform firePoint;
-    public GameObject bulletPrefab;
-    public ParticleSystem muzzleFlash;
-    public GameObject hitEffect;
-
-    private StarterAssetsInputs input;
+    public StarterAssets.StarterAssetsInputs input;
 
     [Header("Disparo")]
     public float range = 100f;
-    public float fireRate = 0.2f;
+    public float fireRate = 0.15f;
+    public int damage = 1;
 
-    private float nextFireTime = 0f;
+    [Header("Capas")]
+    public LayerMask hitLayers;
 
-    void Awake()
-    {
-        input = GetComponent<StarterAssetsInputs>();
-    }
+    [Header("Efectos")]
+    public GameObject bulletPrefab;
+    public Transform firePoint;
+
+    private float nextFireTime;
 
     void Update()
     {
-        if (input == null || cam == null) return;
+        bool shootInput = false;
 
-        if (input.shoot && Time.time >= nextFireTime)
+#if ENABLE_INPUT_SYSTEM
+        if (Mouse.current != null && Mouse.current.leftButton.isPressed)
+            shootInput = true;
+
+        if (Gamepad.current != null && Gamepad.current.rightTrigger.ReadValue() > 0.2f)
+            shootInput = true;
+#else
+        shootInput = Input.GetMouseButton(0);
+#endif
+
+        if (shootInput && Time.time >= nextFireTime)
         {
             nextFireTime = Time.time + fireRate;
             Disparar();
@@ -36,32 +46,35 @@ public class PlayerShoot : MonoBehaviour
 
     void Disparar()
     {
-        // 🔫 Muzzle flash
-        if (muzzleFlash != null)
-            muzzleFlash.Play();
-
-        // 💣 Instanciar bala física (visual)
         if (bulletPrefab != null && firePoint != null)
         {
-            Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
+            Instantiate(
+                bulletPrefab,
+                firePoint.position,
+                firePoint.rotation
+            );
         }
 
-        // 🎯 Raycast (lógica REAL)
         RaycastHit hit;
-        if (Physics.Raycast(cam.transform.position, cam.transform.forward, out hit, range))
-        {
-            // 💥 impacto visual
-            if (hitEffect != null)
-            {
-                GameObject impact = Instantiate(hitEffect, hit.point, Quaternion.LookRotation(hit.normal));
-                Destroy(impact, 2f);
-            }
 
-            ZombieAI zombie = hit.collider.GetComponentInParent<ZombieAI>();
+        if (Physics.Raycast(
+                cam.transform.position,
+                cam.transform.forward,
+                out hit,
+                range,
+                hitLayers
+            ))
+        {
+            Debug.Log("Impacto en: " + hit.collider.name);
+
+            ZombieAI zombie =
+                hit.collider.GetComponentInParent<ZombieAI>();
 
             if (zombie != null)
             {
-                bool headshot = hit.collider.CompareTag("Head");
+                bool headshot =
+                    hit.collider.CompareTag("Head");
+
                 zombie.RecibirDisparo(headshot);
             }
         }
