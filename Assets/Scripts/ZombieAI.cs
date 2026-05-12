@@ -1,5 +1,5 @@
-using UnityEngine;
 using System.Collections;
+using UnityEngine;
 
 public class ZombieAI : MonoBehaviour
 {
@@ -14,6 +14,9 @@ public class ZombieAI : MonoBehaviour
 
     [Header("Ataque")]
     public float attackCooldown = 2f;
+    public float damage = 10f;
+    public float attackRangeExtra = 0.5f;
+
     private bool canAttack = true;
 
     [Header("Vida")]
@@ -30,7 +33,11 @@ public class ZombieAI : MonoBehaviour
     {
         if (muerto || player == null) return;
 
-        float distancia = Vector3.Distance(transform.position, player.position);
+        float distancia =
+            Vector3.Distance(
+                transform.position,
+                player.position
+            );
 
         RotarHaciaPlayer();
 
@@ -43,38 +50,84 @@ public class ZombieAI : MonoBehaviour
             animator.SetFloat("speed", 0f);
 
             if (canAttack)
+            {
                 StartCoroutine(Atacar());
+            }
         }
     }
 
     void RotarHaciaPlayer()
     {
-        Vector3 dir = (player.position - transform.position).normalized;
+        Vector3 dir =
+            (player.position - transform.position)
+            .normalized;
+
         dir.y = 0;
 
-        Quaternion rot = Quaternion.LookRotation(dir);
-        transform.rotation = Quaternion.Slerp(transform.rotation, rot, rotationSpeed * Time.deltaTime);
+        Quaternion rot =
+            Quaternion.LookRotation(dir);
+
+        transform.rotation =
+            Quaternion.Slerp(
+                transform.rotation,
+                rot,
+                rotationSpeed * Time.deltaTime
+            );
     }
 
     void Mover()
     {
-        transform.position += transform.forward * speed * Time.deltaTime;
-        animator.SetFloat("speed", speed);
+        transform.position +=
+            transform.forward *
+            speed *
+            Time.deltaTime;
+
+        animator.SetFloat("Speed", speed);
     }
 
     IEnumerator Atacar()
     {
         canAttack = false;
 
+        // ATAQUE ALEATORIO
         int attack = Random.Range(0, 2);
+
         animator.SetInteger("AttackType", attack);
         animator.SetTrigger("Attack");
 
+        // ESPERAR AL GOLPE
+        yield return new WaitForSeconds(0.5f);
+
+        // COMPROBAR DISTANCIA
+        if (player != null && !muerto)
+        {
+            float distancia =
+                Vector3.Distance(
+                    transform.position,
+                    player.position
+                );
+
+            if (distancia <= stoppingDistance + attackRangeExtra)
+            {
+                PlayerHealth ph =
+                    player.GetComponent<PlayerHealth>();
+
+                if (ph != null)
+                {
+                    ph.TakeDamage(damage);
+                }
+            }
+        }
+
+        // COOLDOWN
         yield return new WaitForSeconds(attackCooldown);
+
         canAttack = true;
     }
 
-    // 🔫 LLAMAR DESDE TU DISPARO
+    // =========================
+    // RECIBIR DISPARO
+    // =========================
     public void RecibirDisparo(bool esHeadshot)
     {
         if (muerto) return;
@@ -105,28 +158,51 @@ public class ZombieAI : MonoBehaviour
         }
     }
 
+    // =========================
+    // MORIR
+    // =========================
     void Morir()
     {
         if (muerto) return;
 
         muerto = true;
+
         StopAllCoroutines();
 
-        // Evitar conflictos con Hit
+        // LIMPIAR TRIGGERS
         animator.ResetTrigger("Hit");
+        animator.ResetTrigger("Attack");
 
+        // PARAR MOVIMIENTO
+        animator.SetFloat("speed", 0f);
+
+        // DESACTIVAR COLLIDER
+        Collider[] colliders =
+            GetComponentsInChildren<Collider>();
+
+        foreach (Collider c in colliders)
+        {
+            c.enabled = false;
+        }
+
+        // ANIMACION MUERTE
         int death = Random.Range(0, 2);
+
         animator.SetInteger("DeathType", death);
         animator.SetTrigger("Die");
 
         StartCoroutine(Desaparecer());
     }
 
+    // =========================
+    // DESAPARECER
+    // =========================
     IEnumerator Desaparecer()
     {
         yield return new WaitForSeconds(tiempoDesaparecer);
 
-        Renderer[] renderers = GetComponentsInChildren<Renderer>();
+        Renderer[] renderers =
+            GetComponentsInChildren<Renderer>();
 
         float t = 0f;
 
@@ -134,7 +210,12 @@ public class ZombieAI : MonoBehaviour
         {
             t += Time.deltaTime;
 
-            float alpha = Mathf.Lerp(1f, 0f, t / duracionFade);
+            float alpha =
+                Mathf.Lerp(
+                    1f,
+                    0f,
+                    t / duracionFade
+                );
 
             foreach (Renderer r in renderers)
             {

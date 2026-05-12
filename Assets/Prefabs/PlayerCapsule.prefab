@@ -194,6 +194,7 @@ GameObject:
   - component: {fileID: 5420857361349278248}
   - component: {fileID: 8616685848737228376}
   - component: {fileID: 8259980474511351860}
+  - component: {fileID: 5022348400254341350}
   m_Layer: 6
   m_Name: PlayerCapsule
   m_TagString: Player
@@ -426,8 +427,26 @@ MonoBehaviour:
   hitLayers:
     serializedVersion: 2
     m_Bits: 63
-  bulletPrefab: {fileID: 0}
+  bulletPrefab: {fileID: 5189695862564812421, guid: ca26d859195cd2449b23a162894e18de, type: 3}
   firePoint: {fileID: 1759352966400961390}
+--- !u!114 &5022348400254341350
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8616685848737228372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ec09b21a55b61b744997185c0747f3c2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
+  maxHealth: 100
+  currentHealth: 0
+  regenDelay: 3
+  regenSpeed: 10
+  healthBar: {fileID: 0}
+  gameOverText: {fileID: 0}
 --- !u!1001 &4781341601365254777
 PrefabInstance:
   m_ObjectHideFlags: 0
