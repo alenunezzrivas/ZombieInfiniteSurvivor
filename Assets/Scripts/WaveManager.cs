@@ -10,8 +10,10 @@ public class WaveManager : MonoBehaviour
     public GameObject zombieNormalPrefab;
     public GameObject zombieFuertePrefab;
 
+    [Header("Spawn Points")]
+    public Transform[] spawnPoints;
+
     [Header("Spawn")]
-    public float spawnRadius = 40f;
     public float tiempoEntreSpawns = 1f;
 
     [Header("Oleadas")]
@@ -26,6 +28,18 @@ public class WaveManager : MonoBehaviour
 
     void Start()
     {
+        // BUSCAR PLAYER AUTOMATICAMENTE
+        if (player == null)
+        {
+            GameObject p =
+                GameObject.FindGameObjectWithTag("Player");
+
+            if (p != null)
+            {
+                player = p.transform;
+            }
+        }
+
         StartCoroutine(IniciarOleada());
     }
 
@@ -36,8 +50,11 @@ public class WaveManager : MonoBehaviour
         int cantidad =
             enemigosBase + (waveActual * 2);
 
-        waveText.text =
-            "OLEADA " + waveActual;
+        if (waveText != null)
+        {
+            waveText.text =
+                "OLEADA " + waveActual;
+        }
 
         for (int i = 0; i < cantidad; i++)
         {
@@ -51,41 +68,64 @@ public class WaveManager : MonoBehaviour
 
     void SpawnZombie()
     {
-        Vector2 randomCircle =
-            Random.insideUnitCircle.normalized *
-            spawnRadius;
-
-        Vector3 spawnPos =
-            player.position +
-            new Vector3(
-                randomCircle.x,
-                0,
-                randomCircle.y
+        // =========================
+        // COMPROBAR SPAWN POINTS
+        // =========================
+        if (
+            spawnPoints == null ||
+            spawnPoints.Length == 0
+        )
+        {
+            Debug.LogWarning(
+                "No hay Spawn Points asignados."
             );
 
-        GameObject prefab;
+            return;
+        }
 
-        // ENEMIGOS FUERTES
+        // =========================
+        // ELEGIR SPAWN ALEATORIO
+        // =========================
+        Transform spawnPoint =
+            spawnPoints[
+                Random.Range(
+                    0,
+                    spawnPoints.Length
+                )
+            ];
+
+        // =========================
+        // ELEGIR PREFAB
+        // =========================
         bool spawnFuerte =
             waveActual >= 3 &&
             Random.value < 0.25f;
 
-        prefab =
+        GameObject prefab =
             spawnFuerte
             ? zombieFuertePrefab
             : zombieNormalPrefab;
 
+        // =========================
+        // SPAWNEAR
+        // =========================
         GameObject zombie =
             Instantiate(
                 prefab,
-                spawnPos,
-                Quaternion.identity
+                spawnPoint.position,
+                spawnPoint.rotation
             );
 
+        // =========================
+        // ASIGNAR PLAYER
+        // =========================
         ZombieAI ai =
             zombie.GetComponent<ZombieAI>();
 
-        ai.player = player;
+        if (ai != null)
+        {
+            ai.player = player;
+        }
 
         enemigosVivos++;
 
@@ -96,8 +136,16 @@ public class WaveManager : MonoBehaviour
     {
         enemigosVivos--;
 
+        if (enemigosVivos < 0)
+        {
+            enemigosVivos = 0;
+        }
+
         ActualizarUI();
 
+        // =========================
+        // NUEVA OLEADA
+        // =========================
         if (enemigosVivos <= 0)
         {
             waveActual++;
@@ -108,7 +156,11 @@ public class WaveManager : MonoBehaviour
 
     void ActualizarUI()
     {
-        enemiesText.text =
-            "ENEMIGOS: " + enemigosVivos;
+        if (enemiesText != null)
+        {
+            enemiesText.text =
+                "ENEMIGOS: " +
+                enemigosVivos;
+        }
     }
 }

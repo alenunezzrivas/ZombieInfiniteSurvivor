@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.AI;
 
 public class ZombieAI : MonoBehaviour
 {
@@ -8,7 +7,7 @@ public class ZombieAI : MonoBehaviour
     public Transform player;
     public Animator animator;
 
-    private NavMeshAgent agent;
+    private Rigidbody rb;
 
     [Header("Movimiento")]
     public float speed = 2f;
@@ -34,28 +33,47 @@ public class ZombieAI : MonoBehaviour
 
     void Start()
     {
-        // Buscar player automáticamente
+        // =========================
+        // BUSCAR PLAYER
+        // =========================
         if (player == null)
         {
-            GameObject p = GameObject.FindGameObjectWithTag("Player");
+            GameObject p =
+                GameObject.FindGameObjectWithTag("Player");
 
             if (p != null)
+            {
                 player = p.transform;
+            }
         }
 
-        // Obtener NavMeshAgent
-        agent = GetComponent<NavMeshAgent>();
+        // =========================
+        // COMPONENTES
+        // =========================
+        rb = GetComponent<Rigidbody>();
 
-        if (agent != null)
+        if (animator == null)
         {
-            agent.speed = speed;
-            agent.stoppingDistance = stoppingDistance;
-            agent.angularSpeed = rotationSpeed * 100f;
-            agent.updateRotation = true;
+            animator =
+                GetComponentInChildren<Animator>();
+        }
+
+        // =========================
+        // CONFIGURAR RIGIDBODY
+        // =========================
+        if (rb != null)
+        {
+            rb.useGravity = true;
+
+            rb.isKinematic = false;
+
+            rb.constraints =
+                RigidbodyConstraints.FreezeRotationX |
+                RigidbodyConstraints.FreezeRotationZ;
         }
     }
 
-    void Update()
+    void FixedUpdate()
     {
         if (muerto || player == null)
             return;
@@ -67,39 +85,68 @@ public class ZombieAI : MonoBehaviour
             );
 
         // =========================
+        // ROTACION
+        // =========================
+        Vector3 direccion =
+            player.position - transform.position;
+
+        direccion.y = 0f;
+
+        if (direccion != Vector3.zero)
+        {
+            Quaternion rotacionObjetivo =
+                Quaternion.LookRotation(direccion);
+
+            transform.rotation =
+                Quaternion.Slerp(
+                    transform.rotation,
+                    rotacionObjetivo,
+                    rotationSpeed * Time.fixedDeltaTime
+                );
+        }
+
+        // =========================
         // MOVIMIENTO
         // =========================
         if (distancia > stoppingDistance)
         {
-            Mover();
+            Vector3 movimiento =
+                transform.forward * speed;
 
-            animator.SetFloat("Speed", speed);
+            movimiento.y =
+                rb.linearVelocity.y;
+
+            rb.linearVelocity = movimiento;
+
+            if (animator != null)
+            {
+                animator.SetFloat(
+                    "Speed",
+                    speed
+                );
+            }
         }
         else
         {
-            // Parar zombie
-            if (agent != null)
-            {
-                agent.ResetPath();
-            }
+            rb.linearVelocity =
+                new Vector3(
+                    0f,
+                    rb.linearVelocity.y,
+                    0f
+                );
 
-            animator.SetFloat("Speed", 0f);
+            if (animator != null)
+            {
+                animator.SetFloat(
+                    "Speed",
+                    0f
+                );
+            }
 
             if (canAttack)
             {
                 StartCoroutine(Atacar());
             }
-        }
-    }
-
-    // =========================
-    // MOVER
-    // =========================
-    void Mover()
-    {
-        if (agent != null)
-        {
-            agent.SetDestination(player.position);
         }
     }
 
@@ -110,16 +157,21 @@ public class ZombieAI : MonoBehaviour
     {
         canAttack = false;
 
-        // Ataque aleatorio
-        int attack = Random.Range(0, 2);
+        int attack =
+            Random.Range(0, 2);
 
-        animator.SetInteger("AttackType", attack);
-        animator.SetTrigger("Attack");
+        if (animator != null)
+        {
+            animator.SetInteger(
+                "AttackType",
+                attack
+            );
 
-        // Esperar golpe
+            animator.SetTrigger("Attack");
+        }
+
         yield return new WaitForSeconds(0.5f);
 
-        // Comprobar distancia
         if (player != null && !muerto)
         {
             float distancia =
@@ -128,7 +180,11 @@ public class ZombieAI : MonoBehaviour
                     player.position
                 );
 
-            if (distancia <= stoppingDistance + attackRangeExtra)
+            if (
+                distancia <=
+                stoppingDistance +
+                attackRangeExtra
+            )
             {
                 PlayerHealth ph =
                     player.GetComponent<PlayerHealth>();
@@ -140,8 +196,9 @@ public class ZombieAI : MonoBehaviour
             }
         }
 
-        // Cooldown
-        yield return new WaitForSeconds(attackCooldown);
+        yield return new WaitForSeconds(
+            attackCooldown
+        );
 
         canAttack = true;
     }
@@ -170,7 +227,10 @@ public class ZombieAI : MonoBehaviour
                 }
                 else
                 {
-                    animator.SetTrigger("Hit");
+                    if (animator != null)
+                    {
+                        animator.SetTrigger("Hit");
+                    }
                 }
             }
         }
@@ -192,21 +252,29 @@ public class ZombieAI : MonoBehaviour
 
         StopAllCoroutines();
 
-        // Parar agente
-        if (agent != null)
+        rb.linearVelocity = Vector3.zero;
+
+        if (animator != null)
         {
-            agent.isStopped = true;
-            agent.enabled = false;
+            animator.ResetTrigger("Hit");
+            animator.ResetTrigger("Attack");
+
+            animator.SetFloat(
+                "Speed",
+                0f
+            );
+
+            int death =
+                Random.Range(0, 2);
+
+            animator.SetInteger(
+                "DeathType",
+                death
+            );
+
+            animator.SetTrigger("Die");
         }
 
-        // Limpiar triggers
-        animator.ResetTrigger("Hit");
-        animator.ResetTrigger("Attack");
-
-        // Parar animación movimiento
-        animator.SetFloat("Speed", 0f);
-
-        // Desactivar colliders
         Collider[] colliders =
             GetComponentsInChildren<Collider>();
 
@@ -214,12 +282,6 @@ public class ZombieAI : MonoBehaviour
         {
             c.enabled = false;
         }
-
-        // Animación muerte
-        int death = Random.Range(0, 2);
-
-        animator.SetInteger("DeathType", death);
-        animator.SetTrigger("Die");
 
         StartCoroutine(Desaparecer());
     }
@@ -229,7 +291,9 @@ public class ZombieAI : MonoBehaviour
     // =========================
     IEnumerator Desaparecer()
     {
-        yield return new WaitForSeconds(tiempoDesaparecer);
+        yield return new WaitForSeconds(
+            tiempoDesaparecer
+        );
 
         Renderer[] renderers =
             GetComponentsInChildren<Renderer>();
@@ -254,7 +318,9 @@ public class ZombieAI : MonoBehaviour
                     if (m.HasProperty("_Color"))
                     {
                         Color c = m.color;
+
                         c.a = alpha;
+
                         m.color = c;
                     }
                 }
