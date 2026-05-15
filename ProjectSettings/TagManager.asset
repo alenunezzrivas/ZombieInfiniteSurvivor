@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Head
   - CinemachineTarget
+  - Zombie
   layers:
   - Default
   - TransparentFX

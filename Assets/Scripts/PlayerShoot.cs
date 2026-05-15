@@ -21,7 +21,32 @@ public class PlayerShoot : MonoBehaviour
     public GameObject bulletPrefab;
     public Transform firePoint;
 
+    [Header("Audio")]
+    public AudioClip gunshotClip;
+
     private float nextFireTime;
+    private AudioSource audioSource;
+
+    void Start()
+    {
+        audioSource = GetComponent<AudioSource>();
+
+        if (audioSource == null)
+        {
+            audioSource =
+                gameObject.AddComponent<AudioSource>();
+        }
+
+        audioSource.playOnAwake = false;
+
+        if (gunshotClip == null)
+        {
+            gunshotClip =
+                Resources.Load<AudioClip>(
+                    "Audio/Gameplay/desert_eagle_shot"
+                );
+        }
+    }
 
     void Update()
     {
@@ -53,6 +78,11 @@ public class PlayerShoot : MonoBehaviour
                 firePoint.position,
                 firePoint.rotation
             );
+        }
+
+        if (audioSource != null && gunshotClip != null)
+        {
+            audioSource.PlayOneShot(gunshotClip);
         }
 
         RaycastHit hit;

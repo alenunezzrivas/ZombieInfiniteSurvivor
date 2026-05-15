@@ -783,7 +783,7 @@ GameObject:
   - component: {fileID: 3965722485665018112}
   m_Layer: 0
   m_Name: ZombieNormal
-  m_TagString: Untagged
+  m_TagString: Zombie
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -870,6 +870,9 @@ MonoBehaviour:
   animator: {fileID: 8183988880254530816}
   speed: 2
   stoppingDistance: 2
+  rotationSpeed: 5
+  avoidanceForce: 3
+  avoidanceDuration: 1.2
   attackCooldown: 2
   damage: 10
   attackRangeExtra: 0.5

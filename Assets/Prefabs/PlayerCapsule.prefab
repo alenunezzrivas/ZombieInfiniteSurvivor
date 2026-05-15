@@ -429,6 +429,7 @@ MonoBehaviour:
     m_Bits: 63
   bulletPrefab: {fileID: 5189695862564812421, guid: ca26d859195cd2449b23a162894e18de, type: 3}
   firePoint: {fileID: 1759352966400961390}
+  gunshotClip: {fileID: 0}
 --- !u!114 &5022348400254341350
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -446,7 +447,7 @@ MonoBehaviour:
   regenDelay: 3
   regenSpeed: 10
   healthBar: {fileID: 0}
-  gameOverText: {fileID: 0}
+  damageClip: {fileID: 0}
 --- !u!1001 &4781341601365254777
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -495,6 +496,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -5754084199372789682, guid: ce83fd892fb944e4bbb7b4c7fb96a274, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 5408837539718752999, guid: 773be29be2319a64caea2785527dd422, type: 3}
     - target: {fileID: 919132149155446097, guid: ce83fd892fb944e4bbb7b4c7fb96a274, type: 3}
       propertyPath: m_Name
       value: blaster-a

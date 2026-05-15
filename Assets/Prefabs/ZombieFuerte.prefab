@@ -870,7 +870,7 @@ GameObject:
   - component: {fileID: 6151618614885451101}
   m_Layer: 0
   m_Name: ZombieFuerte
-  m_TagString: Untagged
+  m_TagString: Zombie
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -930,6 +930,9 @@ MonoBehaviour:
   animator: {fileID: 1330990410388923234}
   speed: 2
   stoppingDistance: 2
+  rotationSpeed: 5
+  avoidanceForce: 3
+  avoidanceDuration: 1.2
   attackCooldown: 2
   damage: 10
   attackRangeExtra: 0.5

@@ -1,4 +1,3 @@
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,50 +13,91 @@ public class PlayerHealth : MonoBehaviour
 
     [Header("UI")]
     public Slider healthBar;
-    public GameObject gameOverText;
 
     private CharacterController controller;
-
     private float lastDamageTime;
-
     private bool dead = false;
+
+    private WaveManager waveManager;
+
+    [Header("Audio")]
+    public AudioClip damageClip;
+
+    private AudioSource audioSource;
 
     void Start()
     {
         currentHealth = maxHealth;
 
-        controller = GetComponent<CharacterController>();
+        controller =
+            GetComponent<CharacterController>();
 
-        UpdateUI();
+        waveManager =
+            FindFirstObjectByType<WaveManager>();
+
+        audioSource = GetComponent<AudioSource>();
+
+        if (audioSource == null)
+        {
+            audioSource =
+                gameObject.AddComponent<AudioSource>();
+        }
+
+        audioSource.playOnAwake = false;
+
+        if (damageClip == null)
+        {
+            damageClip =
+                Resources.Load<AudioClip>(
+                    "Audio/Gameplay/bullet_impact"
+                );
+        }
+
+        if (healthBar != null)
+        {
+            healthBar.maxValue =
+                maxHealth;
+
+            healthBar.value =
+                currentHealth;
+        }
     }
 
     void Update()
     {
-        if (dead) return;
+        if (dead)
+            return;
 
         RegenerarVida();
     }
 
-    // =========================
-    // RECIBIR DAÑO
-    // =========================
     public void TakeDamage(float damage)
     {
-        if (dead) return;
+        if (dead)
+            return;
 
         currentHealth -= damage;
 
-        lastDamageTime = Time.time;
+        currentHealth =
+            Mathf.Clamp(
+                currentHealth,
+                0,
+                maxHealth
+            );
 
-        currentHealth = Mathf.Clamp(
-            currentHealth,
-            0,
-            maxHealth
-        );
+        if (audioSource != null && damageClip != null)
+        {
+            audioSource.PlayOneShot(damageClip);
+        }
+
+        lastDamageTime = Time.time;
 
         UpdateUI();
 
-        Debug.Log("PLAYER VIDA: " + currentHealth);
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.PlayerDamaged();
+        }
 
         if (currentHealth <= 0)
         {
@@ -65,64 +105,56 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-    // =========================
-    // REGENERACION
-    // =========================
     void RegenerarVida()
     {
-        // QUIETO
         bool quieto =
             controller.velocity.magnitude < 0.1f;
 
-        // ESPERAR
-        if (quieto &&
-            Time.time > lastDamageTime + regenDelay)
+        float delayFinal =
+            regenDelay;
+
+        if (waveManager != null)
+        {
+            delayFinal +=
+                waveManager.waveActual * 0.5f;
+        }
+
+        if (
+            quieto &&
+            Time.time >
+            lastDamageTime + delayFinal
+        )
         {
             currentHealth +=
                 regenSpeed * Time.deltaTime;
 
-            currentHealth = Mathf.Clamp(
-                currentHealth,
-                0,
-                maxHealth
-            );
+            currentHealth =
+                Mathf.Clamp(
+                    currentHealth,
+                    0,
+                    maxHealth
+                );
 
             UpdateUI();
         }
     }
 
-    // =========================
-    // UI
-    // =========================
     void UpdateUI()
     {
         if (healthBar != null)
         {
-            healthBar.value = currentHealth;
+            healthBar.value =
+                currentHealth;
         }
     }
 
-    // =========================
-    // MUERTE
-    // =========================
     void Die()
     {
         dead = true;
 
-        Debug.Log("GAME OVER");
-
-        if (gameOverText != null)
+        if (GameManager.Instance != null)
         {
-            gameOverText.SetActive(true);
+            GameManager.Instance.GameOver();
         }
-
-        // BLOQUEAR CURSOR
-        Cursor.lockState =
-            CursorLockMode.None;
-
-        Cursor.visible = true;
-
-        // PARAR TIEMPO
-        Time.timeScale = 0f;
     }
 }
