@@ -23,7 +23,12 @@ public class PlayerHealth : MonoBehaviour
     [Header("Audio")]
     public AudioClip damageClip;
 
+    [Header("Screen Shake")]
+    public float shakeIntensity = 0.2f;
+    public float shakeDuration = 0.15f;
+
     private AudioSource audioSource;
+    private CameraShake cameraShake;
 
     void Start()
     {
@@ -51,6 +56,16 @@ public class PlayerHealth : MonoBehaviour
                 Resources.Load<AudioClip>(
                     "Audio/Gameplay/bullet_impact"
                 );
+        }
+
+        Camera mainCam = GetComponentInChildren<Camera>();
+        if (mainCam != null)
+        {
+            cameraShake = mainCam.GetComponent<CameraShake>();
+            if (cameraShake == null)
+            {
+                cameraShake = mainCam.gameObject.AddComponent<CameraShake>();
+            }
         }
 
         if (healthBar != null)
@@ -88,6 +103,11 @@ public class PlayerHealth : MonoBehaviour
         if (audioSource != null && damageClip != null)
         {
             audioSource.PlayOneShot(damageClip);
+        }
+
+        if (cameraShake != null)
+        {
+            cameraShake.Shake(shakeIntensity, shakeDuration);
         }
 
         lastDamageTime = Time.time;

@@ -423,13 +423,15 @@ MonoBehaviour:
   input: {fileID: 5420857361349278248}
   range: 100
   fireRate: 0.3
-  damage: 1
+  damage: 3
   hitLayers:
     serializedVersion: 2
-    m_Bits: 63
+    m_Bits: 319
   bulletPrefab: {fileID: 5189695862564812421, guid: ca26d859195cd2449b23a162894e18de, type: 3}
   firePoint: {fileID: 1759352966400961390}
   gunshotClip: {fileID: 0}
+  shakeIntensity: 0.1
+  shakeDuration: 0.1
 --- !u!114 &5022348400254341350
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -448,6 +450,8 @@ MonoBehaviour:
   regenSpeed: 10
   healthBar: {fileID: 0}
   damageClip: {fileID: 0}
+  shakeIntensity: 0.2
+  shakeDuration: 0.15
 --- !u!1001 &4781341601365254777
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -11,20 +11,29 @@ public class MenuManager : MonoBehaviour
     [Header("Audio")]
     public AudioClip clickClip;
     public AudioClip startClip;
+    public AudioClip menuMusic;
 
-    private AudioSource audioSource;
+    private AudioSource sfxSource;
+    private AudioSource musicSource;
 
     void Start()
     {
-        audioSource = GetComponent<AudioSource>();
+        // SFX source
+        sfxSource = GetComponent<AudioSource>();
 
-        if (audioSource == null)
+        if (sfxSource == null)
         {
-            audioSource =
+            sfxSource =
                 gameObject.AddComponent<AudioSource>();
         }
 
-        audioSource.playOnAwake = false;
+        sfxSource.playOnAwake = false;
+
+        // Music source
+        musicSource = gameObject.AddComponent<AudioSource>();
+        musicSource.playOnAwake = false;
+        musicSource.loop = true;
+        musicSource.volume = 0.5f;
 
         if (clickClip == null)
         {
@@ -42,6 +51,20 @@ public class MenuManager : MonoBehaviour
                 );
         }
 
+        if (menuMusic == null)
+        {
+            menuMusic =
+                Resources.Load<AudioClip>(
+                    "Audio/Music/menu_music"
+                );
+        }
+
+        if (musicSource != null && menuMusic != null)
+        {
+            musicSource.clip = menuMusic;
+            musicSource.Play();
+        }
+
         MostrarTop5();
 
         Cursor.lockState =
@@ -52,9 +75,9 @@ public class MenuManager : MonoBehaviour
 
     public void PlayGame()
     {
-        if (audioSource != null && startClip != null)
+        if (sfxSource != null && startClip != null)
         {
-            audioSource.PlayOneShot(startClip);
+            sfxSource.PlayOneShot(startClip);
         }
 
         Time.timeScale = 1f;
@@ -66,9 +89,9 @@ public class MenuManager : MonoBehaviour
 
     public void ExitGame()
     {
-        if (audioSource != null && clickClip != null)
+        if (sfxSource != null && clickClip != null)
         {
-            audioSource.PlayOneShot(clickClip);
+            sfxSource.PlayOneShot(clickClip);
         }
 
         Application.Quit();

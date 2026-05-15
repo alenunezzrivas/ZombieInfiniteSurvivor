@@ -54319,7 +54319,7 @@ PrefabInstance:
       objectReference: {fileID: 5189695862564812421, guid: ca26d859195cd2449b23a162894e18de, type: 3}
     - target: {fileID: 8259980474511351860, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
       propertyPath: hitLayers.m_Bits
-      value: 63
+      value: 319
       objectReference: {fileID: 0}
     - target: {fileID: 8616685848737228372, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
       propertyPath: m_Name
@@ -62060,6 +62060,7 @@ MonoBehaviour:
   pauseClip: {fileID: 0}
   resumeClip: {fileID: 0}
   gameOverClips: []
+  gameMusic: {fileID: 0}
 --- !u!1001 &1969420551
 PrefabInstance:
   m_ObjectHideFlags: 0

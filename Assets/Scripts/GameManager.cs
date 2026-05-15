@@ -39,10 +39,12 @@ public class GameManager : MonoBehaviour
     public AudioClip pauseClip;
     public AudioClip resumeClip;
     public AudioClip[] gameOverClips;
+    public AudioClip gameMusic;
 
     private bool isPaused = false;
     private bool gameEnded = false;
     private AudioSource audioSource;
+    private AudioSource musicSource;
 
     private void Awake()
     {
@@ -67,6 +69,25 @@ public class GameManager : MonoBehaviour
         }
 
         audioSource.playOnAwake = false;
+
+        musicSource = gameObject.AddComponent<AudioSource>();
+        musicSource.playOnAwake = false;
+        musicSource.loop = true;
+        musicSource.volume = 0.4f;
+
+        if (gameMusic == null)
+        {
+            gameMusic =
+                Resources.Load<AudioClip>(
+                    "Audio/Music/game_music"
+                );
+        }
+
+        if (musicSource != null && gameMusic != null)
+        {
+            musicSource.clip = gameMusic;
+            musicSource.Play();
+        }
 
         if (scoreClips == null || scoreClips.Length == 0)
         {
@@ -148,6 +169,17 @@ public class GameManager : MonoBehaviour
         if (pauseTitle != null)
         {
             pauseTitle.gameObject.SetActive(false);
+        }
+
+        if (Hitmarker.Instance == null)
+        {
+            new GameObject("Hitmarker", typeof(Hitmarker));
+        }
+
+        Camera mainCam = FindFirstObjectByType<Camera>();
+        if (mainCam != null && mainCam.GetComponent<PostProcessingSetup>() == null)
+        {
+            mainCam.gameObject.AddComponent<PostProcessingSetup>();
         }
     }
 
@@ -291,6 +323,11 @@ public class GameManager : MonoBehaviour
         {
             audioSource.PlayOneShot(pauseClip);
         }
+
+        if (musicSource != null)
+        {
+            musicSource.Pause();
+        }
     }
 
     // =========================
@@ -330,6 +367,11 @@ public class GameManager : MonoBehaviour
         if (audioSource != null && resumeClip != null)
         {
             audioSource.PlayOneShot(resumeClip);
+        }
+
+        if (musicSource != null)
+        {
+            musicSource.UnPause();
         }
     }
 
@@ -375,6 +417,11 @@ public class GameManager : MonoBehaviour
         if (pauseTitle != null)
         {
             pauseTitle.gameObject.SetActive(false);
+        }
+
+        if (musicSource != null)
+        {
+            musicSource.Stop();
         }
 
         if (audioSource != null &&

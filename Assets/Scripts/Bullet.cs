@@ -41,54 +41,42 @@ public class Bullet : MonoBehaviour
         ContactPoint contact = collision.contacts[0];
 
         // =========================
-        // DETECTAR ZOMBIE
+        // PARTICULAS EN IMPACTO
+        // =========================
+        if (impactParticles != null)
+        {
+            GameObject impact = Instantiate(
+                impactParticles,
+                contact.point,
+                Quaternion.LookRotation(contact.normal)
+            );
+
+            Destroy(impact, 2f);
+        }
+
+        // =========================
+        // SI NO ES ZOMBIE: AGUJERO
         // =========================
         ZombieAI zombie =
             collision.collider.GetComponentInParent<ZombieAI>();
 
-        // =========================
-        // SI IMPACTA EN ZOMBIE
-        // =========================
-        if (zombie != null)
+        if (zombie == null && bulletHolePrefab != null)
         {
-            // PARTICULAS SOLO EN ZOMBIES
-            if (impactParticles != null)
-            {
-                GameObject impact = Instantiate(
-                    impactParticles,
-                    contact.point,
-                    Quaternion.LookRotation(contact.normal)
-                );
+            Quaternion rot =
+                Quaternion.LookRotation(-contact.normal);
 
-                Destroy(impact, 2f);
-            }
+            GameObject hole = Instantiate(
+                bulletHolePrefab,
+                contact.point + contact.normal * 0.002f,
+                rot
+            );
 
-            bool headshot =
-                collision.collider.CompareTag("Head");
+            hole.transform.SetParent(collision.transform);
 
-            zombie.RecibirDisparo(headshot);
+            Destroy(hole, 15f);
         }
-        else
-        {
-            // =========================
-            // AGUJERO DE BALA
-            // =========================
-            if (bulletHolePrefab != null)
-            {
-                Quaternion rot =
-                    Quaternion.LookRotation(-contact.normal);
-
-                GameObject hole = Instantiate(
-                    bulletHolePrefab,
-                    contact.point + contact.normal * 0.002f,
-                    rot
-                );
-
-                hole.transform.SetParent(collision.transform);
-
-                Destroy(hole, 15f);
-            }
-        }
+        // NOTA: El daño se aplica desde PlayerShoot (hitscan).
+        // La bala es solo visual para evitar doble daño.
 
         // =========================
         // DESACTIVAR COLISIONES

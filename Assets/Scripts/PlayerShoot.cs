@@ -24,8 +24,13 @@ public class PlayerShoot : MonoBehaviour
     [Header("Audio")]
     public AudioClip gunshotClip;
 
+    [Header("Screen Shake")]
+    public float shakeIntensity = 0.1f;
+    public float shakeDuration = 0.1f;
+
     private float nextFireTime;
     private AudioSource audioSource;
+    private CameraShake cameraShake;
 
     void Start()
     {
@@ -45,6 +50,20 @@ public class PlayerShoot : MonoBehaviour
                 Resources.Load<AudioClip>(
                     "Audio/Gameplay/desert_eagle_shot"
                 );
+        }
+
+        if (cam == null)
+        {
+            cam = GetComponentInChildren<Camera>();
+        }
+
+        if (cam != null)
+        {
+            cameraShake = cam.GetComponent<CameraShake>();
+            if (cameraShake == null)
+            {
+                cameraShake = cam.gameObject.AddComponent<CameraShake>();
+            }
         }
     }
 
@@ -85,6 +104,11 @@ public class PlayerShoot : MonoBehaviour
             audioSource.PlayOneShot(gunshotClip);
         }
 
+        if (cameraShake != null)
+        {
+            cameraShake.Shake(shakeIntensity, shakeDuration);
+        }
+
         RaycastHit hit;
 
         if (Physics.Raycast(
@@ -106,6 +130,11 @@ public class PlayerShoot : MonoBehaviour
                     hit.collider.CompareTag("Head");
 
                 zombie.RecibirDisparo(headshot);
+
+                if (Hitmarker.Instance != null)
+                {
+                    Hitmarker.Instance.Mostrar(headshot);
+                }
             }
         }
     }
