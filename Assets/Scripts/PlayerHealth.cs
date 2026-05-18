@@ -112,6 +112,11 @@ public class PlayerHealth : MonoBehaviour
 
         lastDamageTime = Time.time;
 
+        if (PostProcessingSetup.Instance != null)
+        {
+            PostProcessingSetup.Instance.DamageFlash();
+        }
+
         UpdateUI();
 
         if (GameManager.Instance != null)

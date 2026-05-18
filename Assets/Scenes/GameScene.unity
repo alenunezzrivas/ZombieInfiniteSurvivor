@@ -25910,7 +25910,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 67}
+  m_AnchoredPosition: {x: 0, y: 140.5}
   m_SizeDelta: {x: 230, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &842751984
@@ -54289,6 +54289,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 5664355201568562984, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5681926322383357071, guid: c5efc39a8aaf6e64ea40e9ad573e9b47, type: 3}
       propertyPath: m_Layer
       value: 6
@@ -59018,63 +59022,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7746927824541037661, guid: 1f9036ec905b920479091aca9ba81305, type: 3}
   m_PrefabInstance: {fileID: 1878601836}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &1880082187
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 4102190559419448270, guid: ca26d859195cd2449b23a162894e18de, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 3.8548036
-      objectReference: {fileID: 0}
-    - target: {fileID: 4102190559419448270, guid: ca26d859195cd2449b23a162894e18de, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 10.236963
-      objectReference: {fileID: 0}
-    - target: {fileID: 4102190559419448270, guid: ca26d859195cd2449b23a162894e18de, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 8.713025
-      objectReference: {fileID: 0}
-    - target: {fileID: 4102190559419448270, guid: ca26d859195cd2449b23a162894e18de, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4102190559419448270, guid: ca26d859195cd2449b23a162894e18de, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4102190559419448270, guid: ca26d859195cd2449b23a162894e18de, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4102190559419448270, guid: ca26d859195cd2449b23a162894e18de, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4102190559419448270, guid: ca26d859195cd2449b23a162894e18de, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4102190559419448270, guid: ca26d859195cd2449b23a162894e18de, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4102190559419448270, guid: ca26d859195cd2449b23a162894e18de, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5189695862564812421, guid: ca26d859195cd2449b23a162894e18de, type: 3}
-      propertyPath: m_Name
-      value: BlasterBullet
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: ca26d859195cd2449b23a162894e18de, type: 3}
 --- !u!1001 &1880559093
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -62013,6 +61960,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WaveManager
   player: {fileID: 1472199374}
+  objectPool: {fileID: 0}
   zombieNormalPrefab: {fileID: 5870697472782929997, guid: 887892bfa2741064a9f1a642a0522be9, type: 3}
   zombieFuertePrefab: {fileID: 1779468009683439382, guid: 61dcce96d034d6845aa21f01fa17a034, type: 3}
   spawnPoints:
@@ -62061,6 +62009,13 @@ MonoBehaviour:
   resumeClip: {fileID: 0}
   gameOverClips: []
   gameMusic: {fileID: 0}
+  grenadeCount: 0
+  grenadeText: {fileID: 0}
+  grenadePickupPrefab: {fileID: 0}
+  grenadePickupInterval: 15
+  grenadeSpawnRadius: 40
+  comboDecayTime: 3
+  comboMilestoneText: {fileID: 0}
 --- !u!1001 &1969420551
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -67438,7 +67393,6 @@ SceneRoots:
   - {fileID: 1292888989}
   - {fileID: 1723189770}
   - {fileID: 839223986132643783}
-  - {fileID: 1880082187}
   - {fileID: 1904291515}
   - {fileID: 326091625}
   - {fileID: 991316063}

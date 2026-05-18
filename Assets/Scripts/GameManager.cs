@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 public class GameManager : MonoBehaviour
@@ -45,6 +46,27 @@ public class GameManager : MonoBehaviour
     private bool gameEnded = false;
     private AudioSource audioSource;
     private AudioSource musicSource;
+
+    private Button newGameButton;
+    private Button menuButton;
+    private Button resumeButton;
+    private Button pauseMenuButton;
+    private GunSelector gunSelector;
+
+    [Header("Grenades")]
+    public int grenadeCount = 0;
+    public TMP_Text grenadeText;
+    public GameObject grenadePickupPrefab;
+    public float grenadePickupInterval = 15f;
+    public float grenadeSpawnRadius = 40f;
+
+    [Header("Combo")]
+    public float comboDecayTime = 3f;
+    public TMP_Text comboMilestoneText;
+
+    private float comboTimer;
+    private int lastMilestone;
+    private Vector3 comboOriginalScale;
 
     private void Awake()
     {
@@ -146,6 +168,9 @@ public class GameManager : MonoBehaviour
 
         ActualizarUI();
 
+        if (comboText != null)
+            comboOriginalScale = comboText.transform.localScale;
+
         Cursor.lockState =
             CursorLockMode.Locked;
 
@@ -177,10 +202,54 @@ public class GameManager : MonoBehaviour
         }
 
         Camera mainCam = FindFirstObjectByType<Camera>();
-        if (mainCam != null && mainCam.GetComponent<PostProcessingSetup>() == null)
+        if (mainCam != null)
         {
-            mainCam.gameObject.AddComponent<PostProcessingSetup>();
+            if (mainCam.GetComponent<PostProcessingSetup>() == null)
+                mainCam.gameObject.AddComponent<PostProcessingSetup>();
+
+            gunSelector = mainCam.GetComponent<GunSelector>();
+            if (gunSelector == null)
+                gunSelector = mainCam.gameObject.AddComponent<GunSelector>();
         }
+
+        CrearBotonesGameOver();
+        ActualizarUIGranada();
+        InvokeRepeating(nameof(SpawnearPickupGranada), grenadePickupInterval, grenadePickupInterval);
+    }
+
+    void SpawnearPickupGranada()
+    {
+        if (gameEnded || isPaused) return;
+
+        WaveManager wm = FindFirstObjectByType<WaveManager>();
+        if (wm == null || wm.spawnPoints == null || wm.spawnPoints.Length == 0) return;
+
+        Transform spawnPoint = wm.spawnPoints[Random.Range(0, wm.spawnPoints.Length)];
+        Vector3 spawnPos = spawnPoint.position + Vector3.up * 0.5f;
+
+        GameObject pickup;
+
+        if (grenadePickupPrefab != null)
+        {
+            pickup = Instantiate(grenadePickupPrefab, spawnPos, Quaternion.identity);
+        }
+        else
+        {
+            GameObject gbPrefab = Resources.Load<GameObject>("Blasters/grenade-b");
+            if (gbPrefab == null) return;
+
+            pickup = Instantiate(gbPrefab, spawnPos, Quaternion.identity);
+            pickup.transform.localScale = Vector3.one * 0.5f;
+
+            if (pickup.GetComponent<Collider>() == null)
+            {
+                SphereCollider sc = pickup.AddComponent<SphereCollider>();
+                sc.isTrigger = true;
+                sc.radius = 1f;
+            }
+        }
+
+        pickup.AddComponent<GrenadePickup>();
     }
 
     void Update()
@@ -198,6 +267,53 @@ public class GameManager : MonoBehaviour
             {
                 PausarJuego();
             }
+            return;
+        }
+
+        if (isPaused) return;
+
+        if (Input.GetKeyDown(KeyCode.Q) && grenadeCount > 0 && !gameEnded)
+        {
+            grenadeCount--;
+            LanzarGranada();
+            ActualizarUIGranada();
+        }
+
+        if (comboText != null && comboText.transform.localScale != comboOriginalScale)
+        {
+            comboText.transform.localScale = Vector3.Lerp(
+                comboText.transform.localScale,
+                comboOriginalScale,
+                Time.deltaTime * 10f
+            );
+
+            if (Vector3.Distance(comboText.transform.localScale, comboOriginalScale) < 0.01f)
+                comboText.transform.localScale = comboOriginalScale;
+        }
+
+        if (comboMilestoneText != null && comboMilestoneText.gameObject.activeSelf)
+        {
+            Color c = comboMilestoneText.color;
+            c.a = Mathf.MoveTowards(c.a, 0f, Time.deltaTime * 2f);
+            comboMilestoneText.color = c;
+
+            if (c.a <= 0f)
+                comboMilestoneText.gameObject.SetActive(false);
+        }
+
+        if (combo > 0)
+        {
+            comboTimer -= Time.deltaTime;
+
+            if (comboTimer <= 0f)
+            {
+                combo = 0;
+                lastMilestone = 0;
+                ActualizarUI();
+
+                if (comboText != null)
+                    comboText.transform.localScale = comboOriginalScale;
+            }
         }
     }
 
@@ -207,6 +323,7 @@ public class GameManager : MonoBehaviour
     public void ZombieKilled(bool headshot)
     {
         combo++;
+        comboTimer = comboDecayTime;
 
         if (combo > maxCombo)
         {
@@ -229,6 +346,27 @@ public class GameManager : MonoBehaviour
         }
 
         score += puntos;
+
+        if (comboText != null)
+        {
+            comboText.transform.localScale = comboOriginalScale * 1.3f;
+        }
+
+        int milestone = (combo / 5) * 5;
+
+        if (milestone >= 5 && milestone > lastMilestone)
+        {
+            lastMilestone = milestone;
+
+            if (comboMilestoneText != null)
+            {
+                comboMilestoneText.text = "COMBO x" + milestone + "!";
+                Color mc = comboMilestoneText.color;
+                mc.a = 1f;
+                comboMilestoneText.color = mc;
+                comboMilestoneText.gameObject.SetActive(true);
+            }
+        }
 
         if (audioSource != null)
         {
@@ -276,6 +414,13 @@ public class GameManager : MonoBehaviour
     public void PlayerDamaged()
     {
         combo = 0;
+        lastMilestone = 0;
+
+        if (comboText != null)
+            comboText.transform.localScale = comboOriginalScale;
+
+        if (comboMilestoneText != null)
+            comboMilestoneText.gameObject.SetActive(false);
 
         ActualizarUI();
     }
@@ -319,6 +464,18 @@ public class GameManager : MonoBehaviour
             gameOverText.gameObject.SetActive(false);
         }
 
+        if (newGameButton != null)
+            newGameButton.gameObject.SetActive(false);
+
+        if (menuButton != null)
+            menuButton.gameObject.SetActive(false);
+
+        if (resumeButton != null)
+            resumeButton.gameObject.SetActive(true);
+
+        if (pauseMenuButton != null)
+            pauseMenuButton.gameObject.SetActive(true);
+
         if (audioSource != null && pauseClip != null)
         {
             audioSource.PlayOneShot(pauseClip);
@@ -328,6 +485,9 @@ public class GameManager : MonoBehaviour
         {
             musicSource.Pause();
         }
+
+        if (gunSelector != null)
+            gunSelector.SetVisible(true);
     }
 
     // =========================
@@ -364,6 +524,12 @@ public class GameManager : MonoBehaviour
             pauseTitle.gameObject.SetActive(false);
         }
 
+        if (resumeButton != null)
+            resumeButton.gameObject.SetActive(false);
+
+        if (pauseMenuButton != null)
+            pauseMenuButton.gameObject.SetActive(false);
+
         if (audioSource != null && resumeClip != null)
         {
             audioSource.PlayOneShot(resumeClip);
@@ -373,6 +539,9 @@ public class GameManager : MonoBehaviour
         {
             musicSource.UnPause();
         }
+
+        if (gunSelector != null)
+            gunSelector.SetVisible(false);
     }
 
     // =========================
@@ -441,6 +610,21 @@ public class GameManager : MonoBehaviour
                 audioSource.PlayOneShot(clip);
             }
         }
+
+        if (resumeButton != null)
+            resumeButton.gameObject.SetActive(false);
+
+        if (pauseMenuButton != null)
+            pauseMenuButton.gameObject.SetActive(false);
+
+        if (newGameButton != null)
+            newGameButton.gameObject.SetActive(true);
+
+        if (menuButton != null)
+            menuButton.gameObject.SetActive(true);
+
+        if (gunSelector != null)
+            gunSelector.SetVisible(false);
     }
 
     // =========================
@@ -467,6 +651,142 @@ public class GameManager : MonoBehaviour
         SceneManager.LoadScene(
             "MenuScene"
         );
+    }
+
+    // =========================
+    // GRANADAS
+    // =========================
+    public void AddGrenade()
+    {
+        grenadeCount++;
+        ActualizarUIGranada();
+    }
+
+    void ActualizarUIGranada()
+    {
+        if (grenadeText != null)
+            grenadeText.text = "GRENADES: " + grenadeCount;
+    }
+
+    void LanzarGranada()
+    {
+        Camera cam = FindFirstObjectByType<Camera>();
+        if (cam == null) return;
+
+        GameObject prefab = Resources.Load<GameObject>("Prefabs/grenade");
+        if (prefab == null) return;
+
+        GameObject grenade = Instantiate(prefab, cam.transform.position + cam.transform.forward * 1.5f, cam.transform.rotation);
+        grenade.transform.localScale = Vector3.one * 2f;
+
+        if (grenade.GetComponent<Collider>() == null)
+        {
+            SphereCollider sc = grenade.AddComponent<SphereCollider>();
+            sc.isTrigger = false;
+            sc.radius = 0.4f;
+        }
+
+        grenade.AddComponent<Grenade>();
+    }
+
+    // =========================
+    // BOTONES (GAME OVER + PAUSA)
+    // =========================
+    void CrearBotonesGameOver()
+    {
+        if (panel == null) return;
+
+        newGameButton = CrearBoton(
+            "NewGameBtn",
+            "NEW GAME",
+            new Vector2(0, -110),
+            () =>
+            {
+                if (audioSource != null)
+                    audioSource.PlayOneShot(Resources.Load<AudioClip>("Audio/UI/ui_click_01"));
+                RestartGame();
+            }
+        );
+
+        menuButton = CrearBoton(
+            "MenuBtn",
+            "MAIN MENU",
+            new Vector2(0, -200),
+            () =>
+            {
+                if (audioSource != null)
+                    audioSource.PlayOneShot(Resources.Load<AudioClip>("Audio/UI/ui_click_01"));
+                VolverMenu();
+            }
+        );
+
+        resumeButton = CrearBoton(
+            "ResumeBtn",
+            "RESUME",
+            new Vector2(0, -155),
+            () =>
+            {
+                if (audioSource != null)
+                    audioSource.PlayOneShot(Resources.Load<AudioClip>("Audio/UI/ui_click_01"));
+                ReanudarJuego();
+            }
+        );
+
+        pauseMenuButton = CrearBoton(
+            "PauseMenuBtn",
+            "MAIN MENU",
+            new Vector2(0, -245),
+            () =>
+            {
+                if (audioSource != null)
+                    audioSource.PlayOneShot(Resources.Load<AudioClip>("Audio/UI/ui_click_01"));
+                VolverMenu();
+            }
+        );
+
+        newGameButton.gameObject.SetActive(false);
+        menuButton.gameObject.SetActive(false);
+        resumeButton.gameObject.SetActive(false);
+        pauseMenuButton.gameObject.SetActive(false);
+    }
+
+    Button CrearBoton(string name, string texto, Vector2 anchoredPos, UnityEngine.Events.UnityAction action)
+    {
+        GameObject btnObj = new GameObject(name, typeof(RectTransform));
+        btnObj.transform.SetParent(panel.transform, false);
+
+        RectTransform rt = btnObj.GetComponent<RectTransform>();
+        rt.sizeDelta = new Vector2(390, 83);
+        rt.anchoredPosition = anchoredPos;
+
+        Image img = btnObj.AddComponent<Image>();
+        img.color = new Color(0.7f, 0.1f, 0.1f, 0.8f);
+
+        Button btn = btnObj.AddComponent<Button>();
+        btn.onClick.AddListener(action);
+
+        ColorBlock colors = btn.colors;
+        colors.normalColor = new Color(0.7f, 0.1f, 0.1f, 0.8f);
+        colors.highlightedColor = new Color(1f, 0.3f, 0.3f, 0.9f);
+        colors.pressedColor = new Color(0.4f, 0.05f, 0.05f, 0.9f);
+        btn.colors = colors;
+
+        GameObject txtObj = new GameObject("Text", typeof(RectTransform));
+        txtObj.transform.SetParent(btnObj.transform, false);
+
+        RectTransform txtRt = txtObj.GetComponent<RectTransform>();
+        txtRt.anchorMin = Vector2.zero;
+        txtRt.anchorMax = Vector2.one;
+        txtRt.sizeDelta = Vector2.zero;
+
+        TMP_Text tmp = txtObj.AddComponent<TextMeshProUGUI>();
+        tmp.text = texto;
+        tmp.fontSize = 32;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color = Color.white;
+        tmp.fontStyle = FontStyles.Bold;
+
+        return btn;
     }
 
     // =========================

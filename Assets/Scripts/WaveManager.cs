@@ -4,8 +4,11 @@ using UnityEngine;
 
 public class WaveManager : MonoBehaviour
 {
+    private Vector3 waveOriginalScale;
+
     [Header("Referencias")]
     public Transform player;
+    public ObjectPool objectPool;
 
     public GameObject zombieNormalPrefab;
     public GameObject zombieFuertePrefab;
@@ -50,6 +53,14 @@ public class WaveManager : MonoBehaviour
             }
         }
 
+        if (objectPool == null)
+        {
+            objectPool = FindFirstObjectByType<ObjectPool>();
+        }
+
+        if (waveText != null)
+            waveOriginalScale = waveText.transform.localScale;
+
         StartCoroutine(
             LoopOleadas()
         );
@@ -90,12 +101,7 @@ public class WaveManager : MonoBehaviour
             enemigosBase +
             (waveActual * 2);
 
-        if (waveText != null)
-        {
-            waveText.text =
-                "OLEADA " +
-                waveActual;
-        }
+        StartCoroutine(AnunciarOleada());
 
         for (int i = 0; i < cantidad; i++)
         {
@@ -177,22 +183,35 @@ public class WaveManager : MonoBehaviour
         // =========================
         // SPAWNEAR
         // =========================
-        GameObject zombie =
-            Instantiate(
-                prefab,
+        GameObject zombie;
+
+        if (objectPool != null)
+        {
+            zombie = objectPool.Get(prefab);
+            zombie.transform.SetPositionAndRotation(
                 spawnPoint.position,
                 spawnPoint.rotation
             );
+        }
+        else
+        {
+            zombie =
+                Instantiate(
+                    prefab,
+                    spawnPoint.position,
+                    spawnPoint.rotation
+                );
+        }
 
         // =========================
-        // ASIGNAR PLAYER
+        // ASIGNAR PLAYER + POOL
         // =========================
         ZombieAI ai =
             zombie.GetComponent<ZombieAI>();
 
         if (ai != null)
         {
-            ai.player = player;
+            ai.InitZombie(player, objectPool, prefab);
         }
 
         enemigosVivos++;
@@ -216,6 +235,52 @@ public class WaveManager : MonoBehaviour
     }
 
     // =========================
+    // ANUNCIAR OLEADA ANIMADO
+    // =========================
+    IEnumerator AnunciarOleada()
+    {
+        if (waveText == null) yield break;
+
+        waveText.text = "WAVE " + waveActual;
+
+        waveText.transform.localScale = waveOriginalScale * 1.5f;
+
+        Color c = waveText.color;
+        c.a = 1f;
+        waveText.color = c;
+
+        float t = 0f;
+
+        while (t < 0.3f)
+        {
+            t += Time.deltaTime;
+            waveText.transform.localScale = Vector3.Lerp(
+                waveOriginalScale * 1.5f,
+                waveOriginalScale,
+                t / 0.3f
+            );
+            yield return null;
+        }
+
+        waveText.transform.localScale = waveOriginalScale;
+
+        yield return new WaitForSeconds(2.5f);
+
+        t = 0f;
+
+        while (t < 0.5f)
+        {
+            t += Time.deltaTime;
+            c.a = Mathf.Lerp(1f, 0f, t / 0.5f);
+            waveText.color = c;
+            yield return null;
+        }
+
+        c.a = 0f;
+        waveText.color = c;
+    }
+
+    // =========================
     // UI
     // =========================
     void ActualizarUI()
@@ -223,10 +288,8 @@ public class WaveManager : MonoBehaviour
         if (enemiesText != null)
         {
             enemiesText.text =
-                "ENEMIGOS: " +
-                enemigosVivos +
-                " / " +
-                maxZombiesEnPartida;
+                "ENEMIES: " +
+                enemigosVivos;
         }
     }
 }

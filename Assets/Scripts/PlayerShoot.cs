@@ -8,6 +8,7 @@ public class PlayerShoot : MonoBehaviour
     [Header("Referencias")]
     public Camera cam;
     public StarterAssets.StarterAssetsInputs input;
+    public ObjectPool objectPool;
 
     [Header("Disparo")]
     public float range = 100f;
@@ -65,10 +66,17 @@ public class PlayerShoot : MonoBehaviour
                 cameraShake = cam.gameObject.AddComponent<CameraShake>();
             }
         }
+
+        if (objectPool == null)
+        {
+            objectPool = FindFirstObjectByType<ObjectPool>();
+        }
     }
 
     void Update()
     {
+        if (Time.time < nextFireTime) return;
+
         bool shootInput = false;
 
 #if ENABLE_INPUT_SYSTEM
@@ -81,7 +89,7 @@ public class PlayerShoot : MonoBehaviour
         shootInput = Input.GetMouseButton(0);
 #endif
 
-        if (shootInput && Time.time >= nextFireTime)
+        if (shootInput)
         {
             nextFireTime = Time.time + fireRate;
             Disparar();
@@ -92,11 +100,23 @@ public class PlayerShoot : MonoBehaviour
     {
         if (bulletPrefab != null && firePoint != null)
         {
-            Instantiate(
-                bulletPrefab,
-                firePoint.position,
-                firePoint.rotation
-            );
+            GameObject bullet = null;
+
+            if (objectPool != null)
+            {
+                bullet = objectPool.Get(bulletPrefab);
+                bullet.transform.SetPositionAndRotation(firePoint.position, firePoint.rotation);
+            }
+            else
+            {
+                bullet = Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
+            }
+
+            Bullet b = bullet.GetComponent<Bullet>();
+            if (b != null && objectPool != null)
+            {
+                b.Init(objectPool, bulletPrefab);
+            }
         }
 
         if (audioSource != null && gunshotClip != null)
@@ -119,8 +139,6 @@ public class PlayerShoot : MonoBehaviour
                 hitLayers
             ))
         {
-            Debug.Log("Impacto en: " + hit.collider.name);
-
             ZombieAI zombie =
                 hit.collider.GetComponentInParent<ZombieAI>();
 

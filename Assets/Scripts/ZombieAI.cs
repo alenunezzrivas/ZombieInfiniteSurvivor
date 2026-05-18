@@ -50,6 +50,8 @@ public class ZombieAI : MonoBehaviour
 
     private bool muerto = false;
     private AudioSource audioSource;
+    private ObjectPool pool;
+    private GameObject prefabSource;
 
     void Start()
     {
@@ -178,6 +180,71 @@ public class ZombieAI : MonoBehaviour
                     "Audio/Gameplay/headshot_02"
                 ),
             };
+        }
+    }
+
+    void OnDisable()
+    {
+        StopAllCoroutines();
+    }
+
+    public void InitZombie(Transform playerTarget, ObjectPool ownerPool, GameObject prefab)
+    {
+        player = playerTarget;
+        pool = ownerPool;
+        prefabSource = prefab;
+        ResetZombie();
+    }
+
+    void ResetZombie()
+    {
+        muerto = false;
+        ultimoGolpeHeadshot = false;
+        canAttack = true;
+        avoidingObstacle = false;
+        avoidanceDirection = Vector3.zero;
+
+        if (esFuerte)
+            vida = 3;
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.isKinematic = false;
+            rb.constraints =
+                RigidbodyConstraints.FreezeRotationX |
+                RigidbodyConstraints.FreezeRotationZ;
+        }
+
+        Collider[] colliders =
+            GetComponentsInChildren<Collider>();
+
+        foreach (Collider c in colliders)
+            c.enabled = true;
+
+        Renderer[] renderers =
+            GetComponentsInChildren<Renderer>();
+
+        foreach (Renderer r in renderers)
+        {
+            foreach (Material m in r.materials)
+            {
+                if (m.HasProperty("_Color"))
+                {
+                    Color c = m.color;
+                    c.a = 1f;
+                    m.color = c;
+                }
+            }
+        }
+
+        if (animator != null)
+        {
+            animator.enabled = true;
+            animator.ResetTrigger("Hit");
+            animator.ResetTrigger("Attack");
+            animator.SetFloat("Speed", 0f);
         }
     }
 
@@ -452,7 +519,7 @@ public class ZombieAI : MonoBehaviour
     // =========================
     // MORIR
     // =========================
-    void Morir()
+    public void Morir()
     {
         if (muerto)
             return;
@@ -592,6 +659,13 @@ public class ZombieAI : MonoBehaviour
             yield return null;
         }
 
-        Destroy(gameObject);
+        if (pool != null && prefabSource != null)
+        {
+            pool.ReturnToPool(prefabSource, gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 }

@@ -112,6 +112,11 @@ namespace StarterAssets
 
 		private void Update()
 		{
+			if (Input.GetKeyDown(KeyCode.Space))
+			{
+				_input.jump = true;
+			}
+
 			JumpAndGravity();
 			GroundedCheck();
 			Move();

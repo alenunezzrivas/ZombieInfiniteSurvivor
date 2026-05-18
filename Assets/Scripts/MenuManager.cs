@@ -18,7 +18,6 @@ public class MenuManager : MonoBehaviour
 
     void Start()
     {
-        // SFX source
         sfxSource = GetComponent<AudioSource>();
 
         if (sfxSource == null)
@@ -29,7 +28,6 @@ public class MenuManager : MonoBehaviour
 
         sfxSource.playOnAwake = false;
 
-        // Music source
         musicSource = gameObject.AddComponent<AudioSource>();
         musicSource.playOnAwake = false;
         musicSource.loop = true;

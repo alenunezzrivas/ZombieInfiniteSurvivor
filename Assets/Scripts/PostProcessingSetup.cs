@@ -1,9 +1,12 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 public class PostProcessingSetup : MonoBehaviour
 {
+    public static PostProcessingSetup Instance;
+
     [Header("Config")]
     public bool activarBloom = true;
     public float bloomIntensity = 0.5f;
@@ -17,22 +20,30 @@ public class PostProcessingSetup : MonoBehaviour
     public float saturacion = 0f;
     public float contraste = 0f;
 
+    [Header("Damage Flash")]
+    public float flashIntensity = 0.6f;
+    public float flashDuration = 0.3f;
+
+    private Vignette vignette;
+    private float vignetteBase;
+
+    void Awake()
+    {
+        Instance = this;
+    }
+
     void Start()
     {
         Camera cam = GetComponent<Camera>();
         if (cam == null)
-        {
             cam = FindFirstObjectByType<Camera>();
-        }
 
         if (cam != null)
         {
             UniversalAdditionalCameraData camData =
                 cam.GetComponent<UniversalAdditionalCameraData>();
             if (camData == null)
-            {
                 camData = cam.gameObject.AddComponent<UniversalAdditionalCameraData>();
-            }
             camData.renderPostProcessing = true;
         }
 
@@ -55,9 +66,10 @@ public class PostProcessingSetup : MonoBehaviour
 
         if (activarVigneta)
         {
-            Vignette vignette = profile.Add<Vignette>(true);
+            vignette = profile.Add<Vignette>(true);
             vignette.intensity.Override(vignetaIntensidad);
             vignette.smoothness.Override(vignetaSuavizado);
+            vignetteBase = vignetaIntensidad;
         }
 
         if (activarColor)
@@ -66,5 +78,30 @@ public class PostProcessingSetup : MonoBehaviour
             color.saturation.Override(saturacion);
             color.contrast.Override(contraste);
         }
+    }
+
+    public void DamageFlash()
+    {
+        if (vignette == null) return;
+
+        StopAllCoroutines();
+        StartCoroutine(FlashRoutine());
+    }
+
+    IEnumerator FlashRoutine()
+    {
+        vignette.intensity.Override(flashIntensity);
+
+        float t = 0f;
+
+        while (t < flashDuration)
+        {
+            t += Time.deltaTime;
+            float intensity = Mathf.Lerp(flashIntensity, vignetteBase, t / flashDuration);
+            vignette.intensity.Override(intensity);
+            yield return null;
+        }
+
+        vignette.intensity.Override(vignetteBase);
     }
 }

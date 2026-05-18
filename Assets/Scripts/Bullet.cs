@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class Bullet : MonoBehaviour
@@ -11,56 +12,86 @@ public class Bullet : MonoBehaviour
     public GameObject bulletHolePrefab;
 
     private Rigidbody rb;
-
+    private Collider col;
     private bool hasHit = false;
+    private ObjectPool pool;
+    private GameObject prefabSource;
+    private Coroutine lifeTimer;
 
-    void Start()
+    public void Init(ObjectPool ownerPool, GameObject prefab)
     {
+        pool = ownerPool;
+        prefabSource = prefab;
+    }
+
+    void OnEnable()
+    {
+        hasHit = false;
+
         rb = GetComponent<Rigidbody>();
 
         if (rb != null)
         {
-            rb.collisionDetectionMode =
-                CollisionDetectionMode.Continuous;
-
+            rb.isKinematic = false;
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
             rb.linearVelocity = transform.forward * speed;
         }
 
-        Destroy(gameObject, lifeTime);
+        col = GetComponent<Collider>();
+
+        if (col != null)
+            col.enabled = true;
+
+        lifeTimer = StartCoroutine(DevolverTrasTiempo());
+    }
+
+    void OnDisable()
+    {
+        if (lifeTimer != null)
+        {
+            StopCoroutine(lifeTimer);
+            lifeTimer = null;
+        }
+    }
+
+    IEnumerator DevolverTrasTiempo()
+    {
+        yield return new WaitForSeconds(lifeTime);
+
+        Devolver();
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        // EVITAR MULTIPLES IMPACTOS
         if (hasHit) return;
 
         hasHit = true;
 
-        Debug.Log("Impacta en: " + collision.collider.name);
+        if (lifeTimer != null)
+        {
+            StopCoroutine(lifeTimer);
+            lifeTimer = null;
+        }
 
         ContactPoint contact = collision.contacts[0];
 
-        // =========================
-        // PARTICULAS EN IMPACTO
-        // =========================
-        if (impactParticles != null)
-        {
-            GameObject impact = Instantiate(
-                impactParticles,
-                contact.point,
-                Quaternion.LookRotation(contact.normal)
-            );
-
-            Destroy(impact, 2f);
-        }
-
-        // =========================
-        // SI NO ES ZOMBIE: AGUJERO
-        // =========================
         ZombieAI zombie =
             collision.collider.GetComponentInParent<ZombieAI>();
 
-        if (zombie == null && bulletHolePrefab != null)
+        if (zombie != null)
+        {
+            if (impactParticles != null)
+            {
+                GameObject impact = Instantiate(
+                    impactParticles,
+                    contact.point,
+                    Quaternion.LookRotation(contact.normal)
+                );
+
+                Destroy(impact, 2f);
+            }
+        }
+        else if (bulletHolePrefab != null)
         {
             Quaternion rot =
                 Quaternion.LookRotation(-contact.normal);
@@ -75,13 +106,6 @@ public class Bullet : MonoBehaviour
 
             Destroy(hole, 15f);
         }
-        // NOTA: El daño se aplica desde PlayerShoot (hitscan).
-        // La bala es solo visual para evitar doble daño.
-
-        // =========================
-        // DESACTIVAR COLISIONES
-        // =========================
-        Collider col = GetComponent<Collider>();
 
         if (col != null)
             col.enabled = false;
@@ -92,9 +116,18 @@ public class Bullet : MonoBehaviour
             rb.isKinematic = true;
         }
 
-        // =========================
-        // DESTRUIR BALA
-        // =========================
-        Destroy(gameObject);
+        Devolver();
+    }
+
+    void Devolver()
+    {
+        if (pool != null && prefabSource != null)
+        {
+            pool.ReturnToPool(prefabSource, gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 }
